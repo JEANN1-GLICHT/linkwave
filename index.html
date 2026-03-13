@@ -503,20 +503,15 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 function setupSources(){
-  const hasDisplayMedia = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
   const screenOpt = document.getElementById('src-screen');
 
   if(IS_IOS){
+    // iOS definitivamente no tiene getDisplayMedia
     screenOpt.classList.add('hidden');
     document.getElementById('screen-ios-warn').style.display='block';
-  } else if(!hasDisplayMedia){
-    // getDisplayMedia not available (emulated device mode, some Android browsers, etc.)
-    screenOpt.classList.add('hidden');
-    // Show a note in the screen panel
-    document.getElementById('screen-ios-warn').style.display='block';
-    document.getElementById('screen-ios-warn').innerHTML=
-      '⚠ <strong>Captura de pantalla no disponible</strong> en este navegador/dispositivo.<br/>Usa <strong>Micrófono</strong> o <strong>Archivo</strong>.';
   } else {
+    // En Android y Desktop: siempre mostrar la opción.
+    // Si no funciona se maneja el error al intentarlo.
     screenOpt.classList.remove('hidden');
     if(IS_ANDROID){
       document.getElementById('screen-android-steps').style.display='flex';
@@ -590,12 +585,19 @@ function setSource(s){
 // ══════════════════════════════════════
 function loadFile(input){
   const file=input.files[0]; if(!file) return;
-  const url=URL.createObjectURL(file);
+  // Revoke previous blob URL if any
   const audio=document.getElementById('file-audio');
-  // Remove any crossorigin attr — breaks blob URLs
+  if(audio.dataset.blobUrl) URL.revokeObjectURL(audio.dataset.blobUrl);
+  // Reset node-used flag so a fresh AudioContext can use it
+  delete audio.dataset.nodeUsed;
+  window._lwActiveAudioEl = null;
+
+  const url=URL.createObjectURL(file);
   audio.removeAttribute('crossorigin');
   audio.src=url;
+  audio.dataset.blobUrl=url;
   audio.style.display='block';
+  audio.load();
   document.getElementById('file-drop').style.display='none';
   document.getElementById('file-loaded').style.display='flex';
   document.getElementById('file-loaded-name').textContent=file.name;
@@ -604,6 +606,9 @@ function loadFile(input){
 function clearFile(){
   const audio=document.getElementById('file-audio');
   audio.pause(); audio.src=''; audio.style.display='none';
+  delete audio.dataset.nodeUsed;
+  delete audio.dataset.blobUrl;
+  window._lwActiveAudioEl = null;
   document.getElementById('file-drop').style.display='block';
   document.getElementById('file-loaded').style.display='none';
   document.getElementById('file-input').value='';
@@ -717,25 +722,48 @@ async function startTransmit(){
     } else if(sourceType==='file'){
       // ── Local file ──────────────────────────────
       const fileAudio=document.getElementById('file-audio');
-      if(!fileAudio.src){ toast('Primero carga un archivo de música','err'); cleanup(); return; }
+      if(!fileAudio.src && !fileAudio.dataset.blobUrl){
+        toast('Primero carga un archivo de música','err'); cleanup(); return;
+      }
 
-      // createMediaElementSource requires audio to be ready
-      if(fileAudio.readyState < 1){
+      // createMediaElementSource can only be called ONCE per element.
+      // If called before, clone a fresh audio element.
+      let srcEl = fileAudio;
+      if(fileAudio.dataset.nodeUsed){
+        // Create a fresh audio element with the same src
+        srcEl = new Audio();
+        srcEl.src = fileAudio.src;
+        srcEl.controls = false;
+        // Wait for it to be ready
         await new Promise((res,rej)=>{
-          fileAudio.addEventListener('loadedmetadata',res,{once:true});
-          fileAudio.addEventListener('error',rej,{once:true});
-          setTimeout(rej,5000);
-        }).catch(()=>{ throw new Error('El archivo no cargó'); });
+          srcEl.addEventListener('loadedmetadata',res,{once:true});
+          srcEl.addEventListener('error',rej,{once:true});
+          srcEl.load();
+          setTimeout(rej,8000);
+        }).catch(()=>{ throw new Error('No se pudo recargar el archivo'); });
+      } else {
+        fileAudio.dataset.nodeUsed = '1';
+        if(fileAudio.readyState < 1){
+          await new Promise((res,rej)=>{
+            fileAudio.addEventListener('loadedmetadata',res,{once:true});
+            fileAudio.addEventListener('error',rej,{once:true});
+            fileAudio.load();
+            setTimeout(rej,8000);
+          }).catch(()=>{ throw new Error('El archivo no cargó correctamente'); });
+        }
       }
 
       const dest=audioCtx.createMediaStreamDestination();
-      fileAudioNode=audioCtx.createMediaElementSource(fileAudio);
+      fileAudioNode=audioCtx.createMediaElementSource(srcEl);
       fileAudioNode.connect(gainNode);
       gainNode.connect(analyser);
       gainNode.connect(dest);
       gainNode.connect(audioCtx.destination); // host escucha localmente
       stream=dest.stream;
-      fileAudio.play().catch(()=>{});
+      srcEl.play().catch(()=>{});
+      // Keep reference for pause/stop
+      fileAudio.dataset.activeSrcEl = 'cloned';
+      window._lwActiveAudioEl = srcEl;
 
     } else if(sourceType==='screen' || sourceType==='yt'){
       // ── Screen / system audio ────────────────────
@@ -808,7 +836,9 @@ function cleanup(){
 function stopTransmit(){
   if(activeStream){ activeStream.getTracks().forEach(t=>t.stop()); activeStream=null; }
   if(sourceType==='file'){
-    const fa=document.getElementById('file-audio'); fa.pause();
+    const fa = window._lwActiveAudioEl || document.getElementById('file-audio');
+    fa.pause();
+    window._lwActiveAudioEl = null;
   }
   if(fileAudioNode){ fileAudioNode.disconnect(); fileAudioNode=null; }
   if(audioCtx){ audioCtx.close(); audioCtx=null; gainNode=null; analyser=null; }
@@ -836,7 +866,7 @@ function togglePause(){
   isPaused=!isPaused;
   if(audioCtx){ isPaused?audioCtx.suspend():audioCtx.resume(); }
   if(sourceType==='file'){
-    const fa=document.getElementById('file-audio');
+    const fa = window._lwActiveAudioEl || document.getElementById('file-audio');
     isPaused?fa.pause():fa.play().catch(()=>{});
   }
   bcast({type:isPaused?'pause':'play'});
