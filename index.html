@@ -118,9 +118,9 @@ canvas#vc{width:100%;height:100%;display:block;}
 
 /* FILE UPLOAD */
 .file-drop{border:1.5px dashed var(--border2);border-radius:11px;padding:20px 14px;
-  text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+  text-align:center;cursor:pointer;transition:all .2s;display:block;user-select:none;
+  -webkit-tap-highlight-color:transparent;}
 .file-drop:hover,.file-drop.drag{border-color:var(--green);background:var(--green-dim);}
-.file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .file-drop-icon{font-size:28px;margin-bottom:6px;}
 .file-drop-label{font-size:12px;color:var(--text-dim);line-height:1.5;}
 .file-drop-label strong{color:var(--text);}
@@ -128,7 +128,11 @@ canvas#vc{width:100%;height:100%;display:block;}
   border:1px solid rgba(61,220,132,.3);border-radius:10px;padding:10px 12px;}
 .file-loaded-name{flex:1;font-size:12px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .file-clear{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:2px;}
-audio.src-audio{width:100%;height:40px;border-radius:8px;outline:none;}
+
+/* VERSION BADGE */
+.version-badge{position:fixed;bottom:10px;right:10px;font-size:9px;font-family:'DM Mono',monospace;
+  color:var(--text-dim);background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;padding:3px 7px;opacity:.5;z-index:100;pointer-events:none;}
 
 /* YT EMBED */
 .yt-input-row{display:flex;gap:8px;}
@@ -339,17 +343,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <!-- PANEL: ARCHIVO LOCAL -->
     <div class="src-panel" id="panel-file">
       <div class="src-panel-title">Archivo de música</div>
-      <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()">
+      <label class="file-drop" id="file-drop" for="file-input">
         <div class="file-drop-icon">🎵</div>
         <div class="file-drop-label"><strong>Toca para elegir archivo</strong><br/>MP3, AAC, OGG, FLAC, WAV, MP4…</div>
-        <input type="file" id="file-input" accept="audio/*,video/*" style="display:none" onchange="loadFile(this)"/>
-      </div>
+      </label>
+      <input type="file" id="file-input" accept="audio/*,video/*" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;" onchange="loadFile(this)"/>
       <div id="file-loaded" style="display:none;" class="file-loaded">
         <span>🎵</span>
         <span class="file-loaded-name" id="file-loaded-name"></span>
         <button class="file-clear" onclick="clearFile()">✕</button>
       </div>
-      <audio id="file-audio" style="display:none;"></audio>
     </div>
 
     <!-- PANEL: YOUTUBE -->
@@ -467,6 +470,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <button class="c-modal-no" onclick="confirmHearing(false)">✗ No escucho nada</button>
   </div>
 </div>
+
+<div class="version-badge">v1.5.0</div>
 
 <audio id="audio-el" autoplay muted style="display:none"></audio>
 <div class="toast" id="toast"></div>
