@@ -347,7 +347,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
         <div class="file-drop-icon">🎵</div>
         <div class="file-drop-label"><strong>Toca para elegir archivo</strong><br/>MP3, AAC, OGG, FLAC, WAV, MP4…</div>
       </label>
-      <input type="file" id="file-input" accept="audio/*,video/*" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;" onchange="loadFile(this)"/>
+      <input type="file" id="file-input" accept="audio/*,video/*"
+        style="display:block;width:100%;margin-top:8px;font-size:13px;color:var(--text-dim);background:transparent;border:none;cursor:pointer;"
+        onchange="loadFile(this)"/>
       <div id="file-loaded" style="display:none;" class="file-loaded">
         <span>🎵</span>
         <span class="file-loaded-name" id="file-loaded-name"></span>
@@ -590,31 +592,40 @@ function setSource(s){
 function loadFile(input){
   const file=input.files[0]; if(!file) return;
 
-  // Show loading state
   document.getElementById('file-drop').style.display='none';
+  document.getElementById('file-input').style.display='none';
   document.getElementById('file-loaded').style.display='flex';
-  document.getElementById('file-loaded-name').textContent='Cargando '+file.name+'…';
+  document.getElementById('file-loaded-name').textContent='Cargando…';
 
-  const reader = new FileReader();
-  reader.onload = function(e){
-    window._lwFileBuffer = e.target.result; // ArrayBuffer — reusable via .slice()
-    window._lwBufSrc = null;
-    document.getElementById('file-loaded-name').textContent = file.name;
+  const doRead = file.arrayBuffer
+    ? file.arrayBuffer()
+    : new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=e=>res(e.target.result);
+        r.onerror=e=>rej(e);
+        r.readAsArrayBuffer(file);
+      });
+
+  doRead.then(buf=>{
+    window._lwFileBuffer=buf;
+    window._lwBufSrc=null;
+    document.getElementById('file-loaded-name').textContent=file.name;
     toast('✓ '+file.name,'ok');
-  };
-  reader.onerror = function(){
+  }).catch(err=>{
+    console.error('loadFile error:',err);
     document.getElementById('file-drop').style.display='block';
+    document.getElementById('file-input').style.display='block';
     document.getElementById('file-loaded').style.display='none';
-    toast('Error al leer el archivo','err');
-  };
-  reader.readAsArrayBuffer(file);
+    toast('Error al leer: '+(err?.message||'intenta otro archivo'),'err');
+  });
 }
 function clearFile(){
-  window._lwFileBuffer = null;
+  window._lwFileBuffer=null;
   if(window._lwBufSrc){ try{ window._lwBufSrc.stop(); }catch(e){} window._lwBufSrc=null; }
   document.getElementById('file-drop').style.display='block';
-  document.getElementById('file-loaded').style.display='none';
+  document.getElementById('file-input').style.display='block';
   document.getElementById('file-input').value='';
+  document.getElementById('file-loaded').style.display='none';
 }
 
 // ══════════════════════════════════════
