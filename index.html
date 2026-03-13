@@ -611,7 +611,7 @@ input[type=range]::-webkit-slider-thumb {
 </div>
 
 <!-- AUDIO ELEMENT -->
-<audio id="audio-el" autoplay style="display:none"></audio>
+<audio id="audio-el" autoplay muted style="display:none"></audio>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -806,7 +806,7 @@ async function startTransmit() {
     gainNode.gain.value = parseFloat(document.getElementById('vol-slider').value);
     const src = audioCtx.createMediaStreamSource(stream);
     src.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    // NO conectar a audioCtx.destination — evita el feedback loop/bucle
 
     activeStream = stream;
     isTransmitting = true;
@@ -976,6 +976,7 @@ function joinRoom() {
       call.answer();
       call.on('stream', remoteStream => {
         audioEl.srcObject = remoteStream;
+        audioEl.muted = false;
         audioEl.play().catch(e => {
           // Autoplay blocked - need user gesture
           toast('Toca aquí para activar el audio', 'ok');
