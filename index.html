@@ -503,13 +503,19 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 function setupSources(){
-  // Show/hide "Pantalla" option based on device
+  const hasDisplayMedia = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
   const screenOpt = document.getElementById('src-screen');
+
   if(IS_IOS){
-    // iOS: no screen capture at all
     screenOpt.classList.add('hidden');
-    // Show iOS warning in screen panel
     document.getElementById('screen-ios-warn').style.display='block';
+  } else if(!hasDisplayMedia){
+    // getDisplayMedia not available (emulated device mode, some Android browsers, etc.)
+    screenOpt.classList.add('hidden');
+    // Show a note in the screen panel
+    document.getElementById('screen-ios-warn').style.display='block';
+    document.getElementById('screen-ios-warn').innerHTML=
+      '⚠ <strong>Captura de pantalla no disponible</strong> en este navegador/dispositivo.<br/>Usa <strong>Micrófono</strong> o <strong>Archivo</strong>.';
   } else {
     screenOpt.classList.remove('hidden');
     if(IS_ANDROID){
@@ -519,7 +525,6 @@ function setupSources(){
       document.getElementById('screen-desktop-steps').style.display='flex';
     }
   }
-  // Default selection
   setSource('mic');
 }
 
@@ -734,14 +739,28 @@ async function startTransmit(){
 
     } else if(sourceType==='screen' || sourceType==='yt'){
       // ── Screen / system audio ────────────────────
-      // For 'yt' we guide them to switch to screen after loading video
       if(sourceType==='yt'){
         toast('Cambia a Pantalla para capturar el audio del sistema','err'); cleanup(); return;
       }
-      const raw=await navigator.mediaDevices.getDisplayMedia({
-        video:{width:1,height:1,frameRate:1},
-        audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}
-      });
+      // Check availability before calling
+      if(!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function'){
+        cleanup();
+        toast('Captura de pantalla no disponible en este dispositivo/navegador','err');
+        return;
+      }
+      let raw;
+      try{
+        raw=await navigator.mediaDevices.getDisplayMedia({
+          video:{width:1,height:1,frameRate:1},
+          audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}
+        });
+      } catch(e){
+        cleanup();
+        if(e.name==='NotAllowedError') toast('Permiso denegado — cancelaste el diálogo','err');
+        else if(e.name==='NotSupportedError') toast('Tu dispositivo no soporta captura de pantalla','err');
+        else toast('No se pudo capturar pantalla: '+e.message,'err');
+        return;
+      }
       raw.getVideoTracks().forEach(t=>t.stop());
       if(raw.getAudioTracks().length===0){
         raw.getTracks().forEach(t=>t.stop());
