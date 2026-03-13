@@ -349,7 +349,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
         <span class="file-loaded-name" id="file-loaded-name"></span>
         <button class="file-clear" onclick="clearFile()">✕</button>
       </div>
-      <audio id="file-audio" class="src-audio" controls style="display:none;"></audio>
+      <audio id="file-audio" style="display:none;"></audio>
     </div>
 
     <!-- PANEL: YOUTUBE -->
@@ -485,7 +485,6 @@ const HAS_DISPLAY_MEDIA = !!navigator.mediaDevices?.getDisplayMedia;
 // ══════════════════════════════════════
 let mode='host', peer=null, hostConn=null;
 let activeStream=null, gainNode=null, audioCtx=null, analyser=null, visRaf=null;
-let fileAudioNode=null;
 let isMuted=false, isPaused=false, isTransmitting=false;
 let sourceType='mic';
 let clients={};
@@ -585,34 +584,32 @@ function setSource(s){
 // ══════════════════════════════════════
 function loadFile(input){
   const file=input.files[0]; if(!file) return;
-  // Revoke previous blob URL if any
-  const audio=document.getElementById('file-audio');
-  if(audio.dataset.blobUrl) URL.revokeObjectURL(audio.dataset.blobUrl);
-  // Reset node-used flag so a fresh AudioContext can use it
-  delete audio.dataset.nodeUsed;
-  window._lwActiveAudioEl = null;
 
-  const url=URL.createObjectURL(file);
-  audio.removeAttribute('crossorigin');
-  audio.src=url;
-  audio.dataset.blobUrl=url;
-  audio.style.display='block';
-  audio.load();
+  // Show loading state
   document.getElementById('file-drop').style.display='none';
   document.getElementById('file-loaded').style.display='flex';
-  document.getElementById('file-loaded-name').textContent=file.name;
-  toast('✓ '+file.name,'ok');
+  document.getElementById('file-loaded-name').textContent='Cargando '+file.name+'…';
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    window._lwFileBuffer = e.target.result; // ArrayBuffer — reusable via .slice()
+    window._lwBufSrc = null;
+    document.getElementById('file-loaded-name').textContent = file.name;
+    toast('✓ '+file.name,'ok');
+  };
+  reader.onerror = function(){
+    document.getElementById('file-drop').style.display='block';
+    document.getElementById('file-loaded').style.display='none';
+    toast('Error al leer el archivo','err');
+  };
+  reader.readAsArrayBuffer(file);
 }
 function clearFile(){
-  const audio=document.getElementById('file-audio');
-  audio.pause(); audio.src=''; audio.style.display='none';
-  delete audio.dataset.nodeUsed;
-  delete audio.dataset.blobUrl;
-  window._lwActiveAudioEl = null;
+  window._lwFileBuffer = null;
+  if(window._lwBufSrc){ try{ window._lwBufSrc.stop(); }catch(e){} window._lwBufSrc=null; }
   document.getElementById('file-drop').style.display='block';
   document.getElementById('file-loaded').style.display='none';
   document.getElementById('file-input').value='';
-  if(fileAudioNode){ fileAudioNode.disconnect(); fileAudioNode=null; }
 }
 
 // ══════════════════════════════════════
@@ -720,50 +717,32 @@ async function startTransmit(){
       // No destination — evita feedback
 
     } else if(sourceType==='file'){
-      // ── Local file ──────────────────────────────
-      const fileAudio=document.getElementById('file-audio');
-      if(!fileAudio.src && !fileAudio.dataset.blobUrl){
+      // ── Local file via AudioBuffer (no createMediaElementSource restrictions) ──
+      if(!window._lwFileBuffer){
         toast('Primero carga un archivo de música','err'); cleanup(); return;
       }
 
-      // createMediaElementSource can only be called ONCE per element.
-      // If called before, clone a fresh audio element.
-      let srcEl = fileAudio;
-      if(fileAudio.dataset.nodeUsed){
-        // Create a fresh audio element with the same src
-        srcEl = new Audio();
-        srcEl.src = fileAudio.src;
-        srcEl.controls = false;
-        // Wait for it to be ready
-        await new Promise((res,rej)=>{
-          srcEl.addEventListener('loadedmetadata',res,{once:true});
-          srcEl.addEventListener('error',rej,{once:true});
-          srcEl.load();
-          setTimeout(rej,8000);
-        }).catch(()=>{ throw new Error('No se pudo recargar el archivo'); });
-      } else {
-        fileAudio.dataset.nodeUsed = '1';
-        if(fileAudio.readyState < 1){
-          await new Promise((res,rej)=>{
-            fileAudio.addEventListener('loadedmetadata',res,{once:true});
-            fileAudio.addEventListener('error',rej,{once:true});
-            fileAudio.load();
-            setTimeout(rej,8000);
-          }).catch(()=>{ throw new Error('El archivo no cargó correctamente'); });
-        }
+      // Decode a fresh copy of the ArrayBuffer each time (decodeAudioData consumes it)
+      const bufferCopy = window._lwFileBuffer.slice(0);
+      let audioBuffer;
+      try{
+        audioBuffer = await audioCtx.decodeAudioData(bufferCopy);
+      } catch(e){
+        cleanup(); toast('No se pudo decodificar el audio: '+e.message,'err'); return;
       }
 
-      const dest=audioCtx.createMediaStreamDestination();
-      fileAudioNode=audioCtx.createMediaElementSource(srcEl);
-      fileAudioNode.connect(gainNode);
+      const dest = audioCtx.createMediaStreamDestination();
+      const bufSrc = audioCtx.createBufferSource();
+      bufSrc.buffer = audioBuffer;
+      bufSrc.loop = false;
+      bufSrc.connect(gainNode);
       gainNode.connect(analyser);
       gainNode.connect(dest);
       gainNode.connect(audioCtx.destination); // host escucha localmente
-      stream=dest.stream;
-      srcEl.play().catch(()=>{});
-      // Keep reference for pause/stop
-      fileAudio.dataset.activeSrcEl = 'cloned';
-      window._lwActiveAudioEl = srcEl;
+      stream = dest.stream;
+      bufSrc.start(0);
+      bufSrc.onended = ()=>{ if(isTransmitting) stopTransmit(); };
+      window._lwBufSrc = bufSrc;
 
     } else if(sourceType==='screen' || sourceType==='yt'){
       // ── Screen / system audio ────────────────────
@@ -836,11 +815,8 @@ function cleanup(){
 function stopTransmit(){
   if(activeStream){ activeStream.getTracks().forEach(t=>t.stop()); activeStream=null; }
   if(sourceType==='file'){
-    const fa = window._lwActiveAudioEl || document.getElementById('file-audio');
-    fa.pause();
-    window._lwActiveAudioEl = null;
+    if(window._lwBufSrc){ try{ window._lwBufSrc.stop(); }catch(e){} window._lwBufSrc=null; }
   }
-  if(fileAudioNode){ fileAudioNode.disconnect(); fileAudioNode=null; }
   if(audioCtx){ audioCtx.close(); audioCtx=null; gainNode=null; analyser=null; }
   isTransmitting=false; isPaused=false;
   bcast({type:'stream-stopped'});
@@ -865,10 +841,7 @@ function togglePause(){
   if(!isTransmitting) return;
   isPaused=!isPaused;
   if(audioCtx){ isPaused?audioCtx.suspend():audioCtx.resume(); }
-  if(sourceType==='file'){
-    const fa = window._lwActiveAudioEl || document.getElementById('file-audio');
-    isPaused?fa.pause():fa.play().catch(()=>{});
-  }
+  // file pause handled by audioCtx.suspend/resume above
   bcast({type:isPaused?'pause':'play'});
   const btn=document.getElementById('btn-pause');
   btn.classList.toggle('active',isPaused);
