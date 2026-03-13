@@ -12,7 +12,8 @@
   --bg:#080c10;--surface:#0d1219;--surface2:#121820;
   --border:#1a2235;--border2:#1f2d42;
   --green:#3ddc84;--green-dim:#1a3d2b;
-  --red:#ff4757;--text:#d0dde8;--text-dim:#4a5f78;--text-mid:#7a90a8;
+  --red:#ff4757;--yellow:#ffb300;
+  --text:#d0dde8;--text-dim:#4a5f78;--text-mid:#7a90a8;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;
@@ -75,7 +76,7 @@ canvas#vc{width:100%;height:100%;display:block;}
 .room-input:focus{border-color:var(--green);}
 .btn-gen{background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;
   width:44px;height:44px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--text-mid);transition:all .15s;}
+  cursor:pointer;color:var(--text-mid);transition:all .15s;flex-shrink:0;}
 .btn-gen:hover{border-color:var(--green);color:var(--green);}
 .btn-gen svg{width:18px;height:18px;fill:currentColor;}
 
@@ -99,31 +100,63 @@ canvas#vc{width:100%;height:100%;display:block;}
 .slabel{font-size:12px;color:var(--text-mid);font-family:'DM Mono',monospace;}
 
 /* SOURCE GRID */
-.source-grid{display:grid;gap:8px;margin-bottom:14px;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));}
+.source-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin-bottom:14px;}
 .source-opt{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;
-  padding:12px 8px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px;}
+  padding:11px 6px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px;}
 .source-opt:hover{border-color:var(--border2);}
 .source-opt.active{border-color:var(--green);background:var(--green-dim);}
-.source-opt.disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
-.source-opt svg{width:22px;height:22px;fill:var(--text-dim);}
+.source-opt svg{width:20px;height:20px;fill:var(--text-dim);}
 .source-opt.active svg{fill:var(--green);}
-.source-opt span{font-size:11px;color:var(--text-dim);font-weight:500;text-align:center;}
+.source-opt span{font-size:10px;color:var(--text-dim);font-weight:600;text-align:center;line-height:1.2;}
 .source-opt.active span{color:var(--green);}
 
-/* URL SOURCE INPUT */
-.url-input-wrap{display:none;flex-direction:column;gap:8px;margin-bottom:14px;}
-.url-input-wrap.show{display:flex;}
-.url-note{font-size:11px;color:var(--text-dim);line-height:1.5;}
-.url-note strong{color:var(--green);}
-.url-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;
-  padding:11px 14px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);outline:none;
-  transition:border-color .15s;}
-.url-input::placeholder{color:var(--text-dim);font-family:'DM Sans',sans-serif;}
-.url-input:focus{border-color:var(--green);}
-.url-preview{width:100%;border-radius:11px;background:var(--surface2);border:1px solid var(--border);
-  display:none;height:0;overflow:hidden;transition:height .3s;}
-.url-preview.show{display:block;height:56px;}
-.url-preview audio{width:100%;height:56px;filter:invert(1) hue-rotate(180deg);}
+/* SOURCE PANELS */
+.src-panel{display:none;flex-direction:column;gap:10px;margin-bottom:14px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.src-panel.show{display:flex;}
+.src-panel-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);}
+
+/* FILE UPLOAD */
+.file-drop{border:1.5px dashed var(--border2);border-radius:11px;padding:20px 14px;
+  text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.file-drop:hover,.file-drop.drag{border-color:var(--green);background:var(--green-dim);}
+.file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.file-drop-icon{font-size:28px;margin-bottom:6px;}
+.file-drop-label{font-size:12px;color:var(--text-dim);line-height:1.5;}
+.file-drop-label strong{color:var(--text);}
+.file-loaded{display:flex;align-items:center;gap:10px;background:var(--green-dim);
+  border:1px solid rgba(61,220,132,.3);border-radius:10px;padding:10px 12px;}
+.file-loaded-name{flex:1;font-size:12px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.file-clear{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:2px;}
+audio.src-audio{width:100%;height:40px;border-radius:8px;outline:none;}
+
+/* YT EMBED */
+.yt-input-row{display:flex;gap:8px;}
+.yt-input{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;
+  padding:10px 12px;font-size:13px;color:var(--text);outline:none;font-family:'DM Sans',sans-serif;}
+.yt-input:focus{border-color:var(--green);}
+.yt-input::placeholder{color:var(--text-dim);}
+.yt-load-btn{background:var(--green);color:#040f07;border:none;border-radius:10px;padding:10px 14px;
+  font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;}
+.yt-load-btn:hover{background:#4ef59a;}
+.yt-frame-wrap{position:relative;width:100%;padding-bottom:56.25%;border-radius:10px;overflow:hidden;display:none;}
+.yt-frame-wrap.show{display:block;}
+.yt-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
+.yt-note{font-size:11px;color:var(--text-dim);line-height:1.6;}
+.yt-note strong{color:var(--yellow);}
+
+/* WARN BOX */
+.warn-box{background:rgba(255,179,0,.07);border:1px solid rgba(255,179,0,.3);border-radius:12px;
+  padding:11px 14px;font-size:11px;color:#ffcc55;line-height:1.6;}
+.warn-box.red{background:rgba(255,71,87,.07);border-color:rgba(255,71,87,.3);color:#ff8a93;}
+
+/* SCREEN INSTRUCTIONS */
+.screen-steps{display:flex;flex-direction:column;gap:8px;}
+.step{display:flex;gap:10px;align-items:flex-start;}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--green-dim);border:1px solid rgba(61,220,132,.4);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--green);flex-shrink:0;margin-top:1px;}
+.step-text{font-size:12px;color:var(--text-dim);line-height:1.6;}
+.step-text strong{color:var(--text);}
 
 /* CONTROLS */
 .controls-row{display:flex;gap:8px;margin-top:12px;}
@@ -148,13 +181,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .empty-msg .big{font-size:32px;display:block;margin-bottom:8px;opacity:.3;}
 
 /* DEVICE CARD */
-.device-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;
-  padding:12px 14px;animation:slideIn .25s ease;}
+.device-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;padding:12px 14px;animation:slideIn .25s ease;}
 @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .device-card.streaming{border-color:rgba(61,220,132,.4);}
 .device-top{display:flex;align-items:center;gap:12px;}
-.device-avatar{width:38px;height:38px;border-radius:50%;background:var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.device-avatar{width:38px;height:38px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .device-info{flex:1;min-width:0;}
 .device-name{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .device-stats{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}
@@ -210,11 +241,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
   border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* INFO BOX */
-.info-box{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;
-  padding:12px 14px;font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px;}
-.info-box strong{color:var(--text);}
-
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--surface);border:1px solid var(--border2);border-radius:12px;
@@ -251,6 +277,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 <!-- ══════════ HOST VIEW ══════════ -->
 <div id="host-view" style="width:100%;max-width:440px;display:flex;flex-direction:column;">
 
+  <!-- SALA -->
   <div class="card">
     <div class="card-title">Tu sala</div>
     <div class="room-row">
@@ -282,49 +309,87 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
   <div class="card">
     <div class="card-title">Fuente de audio</div>
 
-    <!-- Source options — JS sets layout and shows/hides options per device -->
     <div class="source-grid" id="source-grid">
       <div class="source-opt active" id="src-mic" onclick="setSource('mic')">
         <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
         <span>Micrófono</span>
       </div>
-      <div class="source-opt" id="src-url" onclick="setSource('url')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-        <span>URL / Archivo</span>
+      <div class="source-opt" id="src-file" onclick="setSource('file')">
+        <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        <span>Archivo</span>
+      </div>
+      <div class="source-opt" id="src-yt" onclick="setSource('yt')">
+        <svg viewBox="0 0 24 24"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>
+        <span>YouTube</span>
       </div>
       <div class="source-opt" id="src-screen" onclick="setSource('screen')">
         <svg viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
         <span>Pantalla</span>
       </div>
-      <div class="source-opt" id="src-tab" onclick="setSource('tab')">
-        <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM8 15c0-1.66 1.34-3 3-3 .35 0 .69.07 1 .18V6h5v2h-3v7.03c-.02 1.64-1.35 2.97-3 2.97-1.66 0-3-1.34-3-3z"/></svg>
-        <span>Pestaña</span>
-      </div>
-    </div>
-    <!-- iOS warning shown when screen selected on iOS -->
-    <div id="ios-warn" style="display:none;background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:12px;padding:12px 14px;font-size:12px;color:#ff8a93;line-height:1.6;margin-bottom:12px;">
-      ⚠ <strong>iOS no permite capturar audio del sistema.</strong><br/>
-      Solo puedes usar <strong>Micrófono</strong> (el iPhone capta lo que suena cerca) o <strong>URL/Archivo</strong>.<br/>
-      En Android sí funciona la captura de pantalla.
     </div>
 
-    <!-- URL input (shown when src-url active) -->
-    <div class="url-input-wrap" id="url-input-wrap">
-      <div class="url-note">
-        Pega un link directo a un <strong>archivo .mp3 / .ogg / .wav</strong>, o sube un archivo local.<br/>
-        <span style="opacity:.6">⚠ YouTube y Spotify no funcionan por restricciones de CORS.</span>
-      </div>
-      <input class="url-input" id="url-input" type="url" placeholder="https://ejemplo.com/audio.mp3" oninput="previewUrl()"/>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span style="font-size:11px;color:var(--text-dim);">o elige archivo:</span>
-        <input type="file" id="file-input" accept="audio/*,video/*" style="font-size:11px;color:var(--text-dim);flex:1;" onchange="loadLocalFile(this)"/>
-      </div>
-      <div class="url-preview" id="url-preview">
-        <audio id="url-audio" controls crossorigin="anonymous" style="width:100%;height:56px;"></audio>
+    <!-- PANEL: MICRÓFONO -->
+    <div class="src-panel show" id="panel-mic">
+      <div class="src-panel-title">Micrófono</div>
+      <div class="warn-box" style="background:rgba(61,220,132,.07);border-color:rgba(61,220,132,.25);color:#7ae8b0;">
+        Funciona en todos los dispositivos. El host captura el audio del ambiente. Ideal para usar con auriculares puestos.
       </div>
     </div>
 
-    <button class="btn-primary" id="btn-transmit" onclick="toggleTransmit()">
+    <!-- PANEL: ARCHIVO LOCAL -->
+    <div class="src-panel" id="panel-file">
+      <div class="src-panel-title">Archivo de música</div>
+      <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()">
+        <div class="file-drop-icon">🎵</div>
+        <div class="file-drop-label"><strong>Toca para elegir archivo</strong><br/>MP3, AAC, OGG, FLAC, WAV, MP4…</div>
+        <input type="file" id="file-input" accept="audio/*,video/*" style="display:none" onchange="loadFile(this)"/>
+      </div>
+      <div id="file-loaded" style="display:none;" class="file-loaded">
+        <span>🎵</span>
+        <span class="file-loaded-name" id="file-loaded-name"></span>
+        <button class="file-clear" onclick="clearFile()">✕</button>
+      </div>
+      <audio id="file-audio" class="src-audio" controls style="display:none;"></audio>
+    </div>
+
+    <!-- PANEL: YOUTUBE -->
+    <div class="src-panel" id="panel-yt">
+      <div class="src-panel-title">Reproducir YouTube</div>
+      <div class="yt-note" style="margin-bottom:8px;">
+        Pega el link de cualquier video de YouTube. Se reproduce aquí y el audio va a los clientes.<br/>
+        <strong>⚠ El audio del iframe no se puede capturar directamente</strong> — usa la opción <strong>Pantalla</strong> después de cargar el video, o usa auriculares con el micrófono para re-capturarlo.
+      </div>
+      <div class="yt-input-row">
+        <input class="yt-input" id="yt-input" placeholder="https://youtube.com/watch?v=..." />
+        <button class="yt-load-btn" onclick="loadYoutube()">▶ Cargar</button>
+      </div>
+      <div class="yt-frame-wrap" id="yt-frame-wrap">
+        <iframe id="yt-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+      </div>
+      <div class="warn-box" style="margin-top:4px;">
+        Después de cargar el video, selecciona <strong>Pantalla</strong> e inicia transmisión para capturar el audio del sistema (Android/Desktop).
+      </div>
+    </div>
+
+    <!-- PANEL: PANTALLA / SISTEMA -->
+    <div class="src-panel" id="panel-screen">
+      <div class="src-panel-title" id="screen-panel-title">Captura de pantalla</div>
+      <div id="screen-android-steps" class="screen-steps" style="display:none;">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Toca <strong>Iniciar transmisión</strong> abajo.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Android mostrará un diálogo — activa el toggle <strong>"Incluir audio del dispositivo"</strong>.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">Toca <strong>Iniciar ahora</strong>. Reproduce tu música o YouTube — todo llega a los clientes.</div></div>
+      </div>
+      <div id="screen-desktop-steps" class="screen-steps" style="display:none;">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Toca <strong>Iniciar transmisión</strong> abajo.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Elige la pestaña o pantalla a compartir y activa <strong>"Compartir audio"</strong>.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">Reproduce lo que quieras — YouTube, Spotify, cualquier app.</div></div>
+      </div>
+      <div id="screen-ios-warn" class="warn-box red" style="display:none;">
+        ⚠ <strong>iOS no permite capturar audio del sistema.</strong> Apple lo bloquea completamente. Usa <strong>Micrófono</strong> o <strong>Archivo</strong>.
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-transmit" onclick="toggleTransmit()" style="margin-top:4px;">
       <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       Iniciar transmisión
     </button>
@@ -368,7 +433,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
       Conectar
     </button>
   </div>
-
   <div class="card">
     <div class="card-title">Audio en vivo</div>
     <div class="canim" id="c-connecting" style="display:none;">
@@ -409,54 +473,54 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
 <script>
 // ══════════════════════════════════════
+//  DEVICE DETECTION
+// ══════════════════════════════════════
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const IS_ANDROID = /Android/.test(navigator.userAgent);
+const IS_MOBILE = IS_IOS || IS_ANDROID;
+const HAS_DISPLAY_MEDIA = !!navigator.mediaDevices?.getDisplayMedia;
+
+// ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
 let mode='host', peer=null, hostConn=null;
 let activeStream=null, gainNode=null, audioCtx=null, analyser=null, visRaf=null;
-let urlAudioNode=null; // Web Audio node from url-audio element
+let fileAudioNode=null;
 let isMuted=false, isPaused=false, isTransmitting=false;
-let sourceType='mic'; // mic | url | tab
+let sourceType='mic';
 let clients={};
 let roomId='';
 const audioEl=document.getElementById('audio-el');
-const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
-const isAndroid=/Android/.test(navigator.userAgent);
-const isMobile=isIOS||isAndroid;
 
 // ══════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
-  setupSourceGrid();
+  setupSources();
   const p=new URLSearchParams(location.search), r=p.get('room');
   if(r){ setMode('client'); document.getElementById('client-room-id').value=r.toUpperCase(); }
   else genRoomId();
 });
 
-function setupSourceGrid(){
-  const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isAndroid=/Android/.test(navigator.userAgent);
-  const hasDisplayMedia=!!navigator.mediaDevices?.getDisplayMedia;
-
-  // "Pestaña" = desktop Chrome only (not mobile)
-  // "Pantalla" = Android Chrome or desktop (captures system audio)
-  // iOS: hide both screen & tab, only mic + url
-
-  if(isIOS){
-    document.getElementById('src-screen').classList.add('hidden');
-    document.getElementById('src-tab').classList.add('hidden');
-    setSource('mic');
-  } else if(isAndroid){
-    // Android Chrome supports getDisplayMedia with system audio
-    document.getElementById('src-tab').classList.add('hidden');
-    if(!hasDisplayMedia) document.getElementById('src-screen').classList.add('hidden');
-    setSource('mic');
+function setupSources(){
+  // Show/hide "Pantalla" option based on device
+  const screenOpt = document.getElementById('src-screen');
+  if(IS_IOS){
+    // iOS: no screen capture at all
+    screenOpt.classList.add('hidden');
+    // Show iOS warning in screen panel
+    document.getElementById('screen-ios-warn').style.display='block';
   } else {
-    // Desktop: show all, default to tab
-    document.getElementById('src-mic').classList.remove('active');
-    document.getElementById('src-tab').classList.add('active');
-    sourceType='tab';
+    screenOpt.classList.remove('hidden');
+    if(IS_ANDROID){
+      document.getElementById('screen-android-steps').style.display='flex';
+      document.getElementById('screen-panel-title').textContent='Audio del sistema (Android)';
+    } else {
+      document.getElementById('screen-desktop-steps').style.display='flex';
+    }
   }
+  // Default selection
+  setSource('mic');
 }
 
 // ══════════════════════════════════════
@@ -506,40 +570,60 @@ function pasteRoom(){
 //  SOURCE SELECTION
 // ══════════════════════════════════════
 function setSource(s){
-  const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
-  if((s==='tab'||s==='screen') && isIOS){
-    document.getElementById('ios-warn').style.display='block';
-    return;
-  }
-  document.getElementById('ios-warn').style.display='none';
+  if(s==='screen' && IS_IOS){ toast('iOS no soporta captura de pantalla','err'); return; }
   sourceType=s;
-  ['mic','url','screen','tab'].forEach(id=>{
-    const el=document.getElementById('src-'+id);
-    if(el) el.classList.toggle('active', id===s);
+  ['mic','file','yt','screen'].forEach(id=>{
+    const opt=document.getElementById('src-'+id);
+    if(opt) opt.classList.toggle('active', id===s);
+    const panel=document.getElementById('panel-'+id);
+    if(panel) panel.classList.toggle('show', id===s);
   });
-  document.getElementById('url-input-wrap').classList.toggle('show', s==='url');
 }
 
-function previewUrl(){
-  const url=document.getElementById('url-input').value.trim();
-  const audio=document.getElementById('url-audio');
-  const preview=document.getElementById('url-preview');
-  if(url){
-    audio.src=url;
-    preview.classList.add('show');
-  } else {
-    preview.classList.remove('show');
-  }
-}
-
-function loadLocalFile(input){
+// ══════════════════════════════════════
+//  FILE LOADING (fixed: no crossorigin)
+// ══════════════════════════════════════
+function loadFile(input){
   const file=input.files[0]; if(!file) return;
   const url=URL.createObjectURL(file);
-  const audio=document.getElementById('url-audio');
+  const audio=document.getElementById('file-audio');
+  // Remove any crossorigin attr — breaks blob URLs
+  audio.removeAttribute('crossorigin');
   audio.src=url;
-  document.getElementById('url-input').value='';
-  document.getElementById('url-preview').classList.add('show');
-  toast('Archivo cargado: '+file.name,'ok');
+  audio.style.display='block';
+  document.getElementById('file-drop').style.display='none';
+  document.getElementById('file-loaded').style.display='flex';
+  document.getElementById('file-loaded-name').textContent=file.name;
+  toast('✓ '+file.name,'ok');
+}
+function clearFile(){
+  const audio=document.getElementById('file-audio');
+  audio.pause(); audio.src=''; audio.style.display='none';
+  document.getElementById('file-drop').style.display='block';
+  document.getElementById('file-loaded').style.display='none';
+  document.getElementById('file-input').value='';
+  if(fileAudioNode){ fileAudioNode.disconnect(); fileAudioNode=null; }
+}
+
+// ══════════════════════════════════════
+//  YOUTUBE EMBED
+// ══════════════════════════════════════
+function loadYoutube(){
+  const raw=document.getElementById('yt-input').value.trim();
+  let vid='';
+  // Parse various YouTube URL formats
+  const patterns=[
+    /[?&]v=([^&#]+)/,
+    /youtu\.be\/([^?&#]+)/,
+    /youtube\.com\/embed\/([^?&#]+)/,
+    /youtube\.com\/shorts\/([^?&#]+)/
+  ];
+  for(const re of patterns){ const m=raw.match(re); if(m){ vid=m[1]; break; } }
+  if(!vid){ toast('URL de YouTube no reconocida','err'); return; }
+  const iframe=document.getElementById('yt-iframe');
+  iframe.src='https://www.youtube.com/embed/'+vid+'?autoplay=1&enablejsapi=1';
+  document.getElementById('yt-frame-wrap').classList.add('show');
+  toast('▶ Video cargado — usa Pantalla para transmitir','ok');
 }
 
 // ══════════════════════════════════════
@@ -572,8 +656,7 @@ function initHost(){
         clearTimeout(clients[pid].hearTimer);
         clients[pid].hearStatus=msg.heard?'yes':'no';
         renderClients();
-        const n=clients[pid].name||'Dispositivo';
-        toast(msg.heard?'✓ '+n+' confirma que escucha':'✗ '+n+' dice que NO escucha', msg.heard?'ok':'err');
+        toast(msg.heard?'✓ '+(clients[pid].name)+ ' confirma que escucha':'✗ '+(clients[pid].name)+' NO escucha', msg.heard?'ok':'err');
       }
     });
     conn.on('close',()=>{ clearInterval(clients[pid]?.pt); clearTimeout(clients[pid]?.hearTimer); delete clients[pid]; renderClients(); toast('Dispositivo desconectado'); });
@@ -593,7 +676,6 @@ function pingLoop(pid){
   },2000);
   clients[pid].pt=t;
 }
-
 function callClient(pid){
   if(!activeStream||!peer) return;
   const call=peer.call(pid,activeStream);
@@ -608,75 +690,77 @@ async function toggleTransmit(){ isTransmitting?stopTransmit():await startTransm
 
 async function startTransmit(){
   try{
-    let stream;
-
-    if(sourceType==='mic'){
-      // Works on ALL devices including mobile
-      stream=await navigator.mediaDevices.getUserMedia({
-        audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false },
-        video:false
-      });
-
-    } else if(sourceType==='url'){
-      // Capture audio from the url-audio element via Web Audio
-      const urlAudio=document.getElementById('url-audio');
-      if(!urlAudio.src && !urlAudio.currentSrc){ toast('Primero carga una URL o archivo','err'); return; }
-
-      audioCtx=new AudioContext();
-      gainNode=audioCtx.createGain();
-      gainNode.gain.value=parseFloat(document.getElementById('vol-slider').value);
-      analyser=audioCtx.createAnalyser();
-      analyser.fftSize=256;
-
-      // Create a stream destination to capture the audio element's output
-      const dest=audioCtx.createMediaStreamDestination();
-      urlAudioNode=audioCtx.createMediaElementSource(urlAudio);
-      urlAudioNode.connect(gainNode);
-      gainNode.connect(analyser);
-      gainNode.connect(dest); // URL source needs to go to dest
-      gainNode.connect(audioCtx.destination); // user hears it locally too
-
-      stream=dest.stream;
-      urlAudio.play().catch(()=>{});
-
-      // Skip the generic AudioContext setup below
-      activeStream=stream;
-      isTransmitting=true; isPaused=false;
-      callAll();
-      bcast({type:'stream-active'});
-      document.getElementById('vis-card').classList.add('show');
-      startVis();
-      setBtnTransmitting(true);
-      setHS('live','● Transmitiendo en vivo');
-      toast('✓ Transmisión iniciada','ok');
-      return;
-
-    } else if(sourceType==='screen' || sourceType==='tab'){
-      // Works on desktop AND Android Chrome (Android shows "Share screen" + audio toggle)
-      stream=await navigator.mediaDevices.getDisplayMedia({
-        video:{width:1,height:1,frameRate:1},
-        audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}
-      });
-      stream.getVideoTracks().forEach(t=>t.stop());
-      if(stream.getAudioTracks().length===0){
-        toast('⚠ Sin audio — activa "Compartir audio" al compartir pantalla','err');
-        stream.getTracks().forEach(t=>t.stop()); return;
-      }
-    }
-
-    if(!stream || stream.getAudioTracks().length===0){
-      toast('⚠ Sin audio. Permite el micrófono o activa "Compartir audio".','err'); return;
-    }
-
+    let stream=null;
     audioCtx=new AudioContext();
     gainNode=audioCtx.createGain();
     gainNode.gain.value=parseFloat(document.getElementById('vol-slider').value);
     analyser=audioCtx.createAnalyser();
     analyser.fftSize=256;
-    const src=audioCtx.createMediaStreamSource(stream);
-    src.connect(gainNode);
-    gainNode.connect(analyser);
-    // NO connect to destination for mic/tab — evita feedback loop
+
+    if(sourceType==='mic'){
+      // ── Microphone ──────────────────────────────
+      const raw=await navigator.mediaDevices.getUserMedia({
+        audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
+        video:false
+      });
+      stream=raw;
+      const src=audioCtx.createMediaStreamSource(stream);
+      src.connect(gainNode);
+      gainNode.connect(analyser);
+      // No destination — evita feedback
+
+    } else if(sourceType==='file'){
+      // ── Local file ──────────────────────────────
+      const fileAudio=document.getElementById('file-audio');
+      if(!fileAudio.src){ toast('Primero carga un archivo de música','err'); cleanup(); return; }
+
+      // createMediaElementSource requires audio to be ready
+      if(fileAudio.readyState < 1){
+        await new Promise((res,rej)=>{
+          fileAudio.addEventListener('loadedmetadata',res,{once:true});
+          fileAudio.addEventListener('error',rej,{once:true});
+          setTimeout(rej,5000);
+        }).catch(()=>{ throw new Error('El archivo no cargó'); });
+      }
+
+      const dest=audioCtx.createMediaStreamDestination();
+      fileAudioNode=audioCtx.createMediaElementSource(fileAudio);
+      fileAudioNode.connect(gainNode);
+      gainNode.connect(analyser);
+      gainNode.connect(dest);
+      gainNode.connect(audioCtx.destination); // host escucha localmente
+      stream=dest.stream;
+      fileAudio.play().catch(()=>{});
+
+    } else if(sourceType==='screen' || sourceType==='yt'){
+      // ── Screen / system audio ────────────────────
+      // For 'yt' we guide them to switch to screen after loading video
+      if(sourceType==='yt'){
+        toast('Cambia a Pantalla para capturar el audio del sistema','err'); cleanup(); return;
+      }
+      const raw=await navigator.mediaDevices.getDisplayMedia({
+        video:{width:1,height:1,frameRate:1},
+        audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}
+      });
+      raw.getVideoTracks().forEach(t=>t.stop());
+      if(raw.getAudioTracks().length===0){
+        raw.getTracks().forEach(t=>t.stop());
+        cleanup();
+        toast(IS_ANDROID
+          ? '⚠ Activa "Incluir audio del dispositivo" en el diálogo de Android'
+          : '⚠ Activa "Compartir audio" al elegir la pestaña','err');
+        return;
+      }
+      stream=raw;
+      const src=audioCtx.createMediaStreamSource(stream);
+      src.connect(gainNode);
+      gainNode.connect(analyser);
+      // No destination — evita feedback
+    }
+
+    if(!stream || stream.getAudioTracks().length===0){
+      cleanup(); toast('No se pudo obtener audio','err'); return;
+    }
 
     activeStream=stream;
     isTransmitting=true; isPaused=false;
@@ -691,15 +775,23 @@ async function startTransmit(){
     toast('✓ Transmisión iniciada','ok');
 
   } catch(err){
-    if(err.name!=='NotAllowedError') toast('Error: '+err.message,'err');
-    else toast('Permiso denegado','err');
+    cleanup();
+    if(err.name==='NotAllowedError') toast('Permiso denegado','err');
+    else toast('Error: '+err.message,'err');
   }
+}
+
+function cleanup(){
+  if(audioCtx){ audioCtx.close(); audioCtx=null; }
+  gainNode=null; analyser=null;
 }
 
 function stopTransmit(){
   if(activeStream){ activeStream.getTracks().forEach(t=>t.stop()); activeStream=null; }
-  const urlAudio=document.getElementById('url-audio');
-  if(urlAudioNode){ urlAudio.pause(); urlAudioNode=null; }
+  if(sourceType==='file'){
+    const fa=document.getElementById('file-audio'); fa.pause();
+  }
+  if(fileAudioNode){ fileAudioNode.disconnect(); fileAudioNode=null; }
   if(audioCtx){ audioCtx.close(); audioCtx=null; gainNode=null; analyser=null; }
   isTransmitting=false; isPaused=false;
   bcast({type:'stream-stopped'});
@@ -714,21 +806,20 @@ function stopTransmit(){
 
 function setBtnTransmitting(on){
   const btn=document.getElementById('btn-transmit');
-  if(on){
-    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Detener transmisión';
-    btn.classList.add('danger');
-  } else {
-    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M8 5v14l11-7z"/></svg> Iniciar transmisión';
-    btn.classList.remove('danger');
-  }
+  btn.innerHTML=on
+    ?'<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Detener transmisión'
+    :'<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M8 5v14l11-7z"/></svg> Iniciar transmisión';
+  btn.classList.toggle('danger',on);
 }
 
 function togglePause(){
   if(!isTransmitting) return;
   isPaused=!isPaused;
   if(audioCtx){ isPaused?audioCtx.suspend():audioCtx.resume(); }
-  const urlAudio=document.getElementById('url-audio');
-  if(sourceType==='url'){ isPaused?urlAudio.pause():urlAudio.play().catch(()=>{}); }
+  if(sourceType==='file'){
+    const fa=document.getElementById('file-audio');
+    isPaused?fa.pause():fa.play().catch(()=>{});
+  }
   bcast({type:isPaused?'pause':'play'});
   const btn=document.getElementById('btn-pause');
   btn.classList.toggle('active',isPaused);
@@ -847,7 +938,7 @@ function askHearing(pid){
   c.hearTimer=setTimeout(()=>{
     if(clients[pid]&&clients[pid].hearStatus==='wait'){
       clients[pid].hearStatus='no'; renderClients();
-      toast((clients[pid].name||'Dispositivo')+' no respondió','err');
+      toast((clients[pid]?.name||'Dispositivo')+' no respondió','err');
     }
   },10000);
   toast('Solicitud enviada a '+(c.name||'Dispositivo'));
@@ -862,10 +953,10 @@ function setClientVol2(pid,v){
 function bcast(msg){ Object.values(clients).forEach(c=>{ if(c.conn&&c.conn.open) c.conn.send(msg); }); }
 
 function emoji(n){
-  n=n.toLowerCase();
+  n=(n||'').toLowerCase();
   if(n.includes('iphone')) return '📱';
   if(n.includes('android')||n.includes('samsung')||n.includes('pixel')) return '📱';
-  if(n.includes('ipad')||n.includes('tablet')) return '📱';
+  if(n.includes('ipad')) return '📱';
   if(n.includes('mac')) return '💻';
   if(n.includes('windows')) return '🖥️';
   if(n.includes('chrome')||n.includes('cros')) return '💻';
@@ -975,7 +1066,7 @@ function toast(msg,type=''){
   if(tt) clearTimeout(tt);
   tt=setTimeout(()=>el.classList.remove('show'),3200);
 }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 initHost();
 </script>
